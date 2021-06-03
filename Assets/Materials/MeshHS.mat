@@ -1,0 +1,66 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 6
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_Name: MeshHS
+  m_Shader: {fileID: 4800000, guid: 5c0a178b81a50d24ea8e8d1fb256813a, type: 3}
+  m_ShaderKeywords: 
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BeachTexture:
+        m_Texture: {fileID: 2800000, guid: 5376a56f2323d374da16d3bfa3b7c67c, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _LastLevelTexture:
+        m_Texture: {fileID: 2800000, guid: a86253418eafd7144bf55423e957d3f5, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Level1Texture:
+        m_Texture: {fileID: 2800000, guid: df2e81a644079da45a7c37058e81b367, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Level2Texture:
+        m_Texture: {fileID: 2800000, guid: 68dde9a7bad433c4586e2340e6daf985, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Level3Texture:
+        m_Texture: {fileID: 2800000, guid: e7f6b403f32dce74fa0c0ca59384c645, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _UnderWaterTexture:
+        m_Texture: {fileID: 2800000, guid: 03185df4c0460654889624f23aca68a7, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Floats:
+    - _Beach: 1.1049893
+    - _BeachTextureSize: 100
+    - _Brightness: 0.28512397
+    - _LastLevel: 26.757322
+    - _LastLevelTextureSize: 50
+    - _Level1: 4.912934
+    - _Level1TextureSize: 100
+    - _Level2: 17.15528
+    - _Level2TextureSize: 100
+    - _Level3: 26.757322
+    - _Level3TextureSize: 10
+    - _Slope: 1
+    - _UnderWaterTextureSize: 6
+    - _WaterLevel: 0.8625579
+    m_Colors:
+    - _BeachColor: {r: 0.9, g: 0.86, b: 0, a: 1}
+    - _LastLevelColor: {r: 0.6117647, g: 0.41176474, b: 0.24313727, a: 1}
+    - _Level1Color: {r: 0.65, g: 0.86, b: 0.63, a: 1}
+    - _Level2Color: {r: 0.69, g: 0.63, b: 0.31, a: 1}
+    - _Level3Color: {r: 0.75, g: 0.53, b: 0, a: 1}
+    - _UnderWaterColor: {r: 0.37, g: 0.78, b: 0.92, a: 1}
