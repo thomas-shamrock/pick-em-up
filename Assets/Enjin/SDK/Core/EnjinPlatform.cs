@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using Enjin.SDK.GraphQL;
 using Enjin.SDK.PusherClient;
@@ -182,14 +182,45 @@ namespace Enjin.SDK.Core
                 id.ToString()));
 
             var resultGQL = JSON.Parse(GraphQuery.queryReturn);
+            var resultJson = resultGQL["data"]["result"][0];
             // TODO: Convert this to json parsing to datatype (Updates to read back in GraphQuery.cs)
             App appData = new App()
             {
-                id = resultGQL["data"]["result"][0]["id"].AsInt,
-                name = resultGQL["data"]["result"][0]["name"].Value,
-                description = resultGQL["data"]["result"][0]["description"].Value,
-                image = resultGQL["data"]["result"][0]["image"].Value
+                id = resultJson["id"].AsInt,
+                name = resultJson["name"].Value,
+                description = resultJson["description"].Value,
+                image = resultJson["image"].Value
             };
+
+            var walletsJson = resultJson["wallets"].AsArray;
+            for (int i = 0; i < walletsJson.Count; i++)
+            {
+                appData.wallets.Add(new Wallet(){ethAddress = walletsJson[i]["ethAddress"].Value});
+            }
+
+            return appData;
+        }
+        
+        public App GetApp()
+        {
+            GraphQuery.POST(Enjin.PlatformTemplate.GetQuery["GetApp"]);
+
+            var resultGQL = JSON.Parse(GraphQuery.queryReturn);
+            var resultJson = resultGQL["data"]["result"];
+            // TODO: Convert this to json parsing to datatype (Updates to read back in GraphQuery.cs)
+            App appData = new App()
+            {
+                id = resultJson["id"].AsInt,
+                name = resultJson["name"].Value,
+                description = resultJson["description"].Value,
+                image = resultJson["image"].Value
+            };
+
+            var walletsJson = resultJson["wallets"].AsArray;
+            for (int i = 0; i < walletsJson.Count; i++)
+            {
+                appData.wallets.Add(new Wallet(){ethAddress = walletsJson[i]["ethAddress"].Value});
+            }
 
             return appData;
         }

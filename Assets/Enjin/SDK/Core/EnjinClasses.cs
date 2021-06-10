@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using Enjin.SDK.DataTypes;
@@ -36,12 +36,26 @@ namespace Enjin.SDK.Core
         public string id;
         public string index;
         public int value;
-
+        public Token token;
+        
         public Balance()
         {
             id = "";
             index = "";
             value = 0;
+        }
+    }
+
+    [Serializable]
+    public class Token
+    {
+        public string name;
+        public int appId;
+
+        public Token()
+        {
+            name = "";
+            appId = 0;
         }
     }
 
@@ -537,6 +551,7 @@ namespace Enjin.SDK.Core
         public string name; // Application name
         public string description; // Application description
         public string image; // Application URL to image location
+        public List<Wallet> wallets; // Wallets for linked to this app
 
         public App()
         {
@@ -544,6 +559,7 @@ namespace Enjin.SDK.Core
             name = string.Empty;
             description = string.Empty;
             image = string.Empty;
+            wallets = new List<Wallet>();
         }
     }
 

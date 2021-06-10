@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Enjin.SDK.DataTypes;
@@ -313,6 +313,11 @@ namespace Enjin.SDK.Core
         {
             return _platform.GetAppByID(id);
         }
+        
+        public static App GetApp()
+        {
+            return _platform.GetApp();
+        }
 
         #endregion
 
@@ -323,11 +328,40 @@ namespace Enjin.SDK.Core
             return _requests.GetCryptoItemURI(itemID, itemIndex, replaceTags);
         }
 
+        public static Request MintFungibleItem(string senderAddress, string[] addresses, string itemID, int value,
+            bool async = false)
+        {
+            return _requests.MintFungibleItem(senderAddress, addresses, itemID, value, null, async);
+        }
+        
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request MintFungibleItem(int senderID, string[] addresses, string itemID, int value,
             bool async = false)
         {
             return _requests.MintFungibleItem(senderID, addresses, itemID, value, null, async);
         }
+        
+        public static Request MintFungibleItem(string senderAddress, string[] addresses, string itemID, int value,
+            System.Action<RequestEvent> callback, bool async = false)
+        {
+            if (!async)
+            {
+                Request request = MintFungibleItem(senderAddress, addresses, itemID, value, async);
+                RequestCallbacks.Add(request.id, callback);
+                return request;
+            }
+            else
+            {
+                _requests.MintFungibleItem(senderAddress, addresses, itemID, value, (queryReturn) =>
+                {
+                    Request fullRequest = JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(queryReturn, 2));
+                    RequestCallbacks.Add(fullRequest.id, callback);
+                }, async);
+                return null;
+            }
+        }
+
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
 
         public static Request MintFungibleItem(int senderID, string[] addresses, string itemID, int value,
             System.Action<RequestEvent> callback, bool async = false)
@@ -348,12 +382,40 @@ namespace Enjin.SDK.Core
                 return null;
             }
         }
+        
+        public static Request MintNonFungibleItem(string senderAddress, string[] addresses, string itemID, bool async = false)
+        {
+            return _requests.MintNonFungibleItem(senderAddress, addresses, itemID, null, async);
+        }
 
+
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request MintNonFungibleItem(int senderID, string[] addresses, string itemID, bool async = false)
         {
             return _requests.MintNonFungibleItem(senderID, addresses, itemID, null, async);
         }
+        
+        public static Request MintNonFungibleItem(string senderAddress, string[] addresses, string itemID,
+            System.Action<RequestEvent> callback, bool async = false)
+        {
+            if (!async)
+            {
+                Request request = MintNonFungibleItem(senderAddress, addresses, itemID, async);
+                RequestCallbacks.Add(request.id, callback);
+                return request;
+            }
+            else
+            {
+                _requests.MintNonFungibleItem(senderAddress, addresses, itemID, (queryReturn) =>
+                {
+                    Request fullRequest = JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(queryReturn, 2));
+                    RequestCallbacks.Add(fullRequest.id, callback);
+                }, async);
+                return null;
+            }
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request MintNonFungibleItem(int senderID, string[] addresses, string itemID,
             System.Action<RequestEvent> callback, bool async = false)
         {
@@ -373,7 +435,14 @@ namespace Enjin.SDK.Core
                 return null;
             }
         }
+        
+        public static Request SetCryptoItemURI(string senderAddress, CryptoItem item, string URI,
+            System.Action<RequestEvent> callback)
+        {
+            return _requests.SetCryptoItemURI(senderAddress, item, URI, callback);
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request SetCryptoItemURI(int identityID, CryptoItem item, string URI,
             System.Action<RequestEvent> callback)
         {
@@ -384,13 +453,41 @@ namespace Enjin.SDK.Core
         {
             return _requests.Get(requestID);
         }
+        
+        public static Request SendCryptoItemRequest(string senderAddress, string tokenID, string recipientAddress, int value,
+            bool async = false)
+        {
+            return _requests.SendItem(senderAddress, tokenID, recipientAddress, value, null, async);
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request SendCryptoItemRequest(int identityID, string tokenID, int recipientID, int value,
             bool async = false)
         {
             return _requests.SendItem(identityID, tokenID, recipientID, value, null, async);
         }
+        
+        public static Request SendCryptoItemRequest(string senderAddress, string tokenID, string recipientAddress, int value,
+            System.Action<RequestEvent> callback, bool async = false)
+        {
+            if (!async)
+            {
+                Request request = SendCryptoItemRequest(senderAddress, tokenID, recipientAddress, value, async);
+                RequestCallbacks.Add(request.id, callback);
+                return request;
+            }
+            else
+            {
+                _requests.SendItem(senderAddress, tokenID, recipientAddress, value, (queryReturn) =>
+                {
+                    Request fullRequest = JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(queryReturn, 2));
+                    RequestCallbacks.Add(fullRequest.id, callback);
+                }, async);
+                return null;
+            }
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request SendCryptoItemRequest(int identityID, string tokenID, int recipientID, int value,
             System.Action<RequestEvent> callback, bool async = false)
         {
@@ -411,17 +508,51 @@ namespace Enjin.SDK.Core
             }
         }
 
+        public static Request SendBatchCryptoItems(CryptoItemBatch items, string senderAddress)
+        {
+            return _requests.SendItems(items, senderAddress);
+        }
+        
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request SendBatchCryptoItems(CryptoItemBatch items, int userID)
         {
             return _requests.SendItems(items, userID);
         }
+        
+        public static Request MeltTokens(string senderAddress, string itemID, string index, int amount,
+            bool async = false)
+        {
+            return _requests.MeltItem(senderAddress, itemID, index, amount, null, async);
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request MeltTokens(int userIdentityID, string itemID, string index, int amount,
             bool async = false)
         {
             return _requests.MeltItem(userIdentityID, itemID, index, amount, null, async);
         }
+        
+        public static Request MeltTokens(string senderAddress, string itemID, string index, int amount,
+            System.Action<RequestEvent> callback, bool async = false)
+        {
+            if (!async)
+            {
+                Request request = MeltTokens(senderAddress, itemID, index, amount, async);
+                RequestCallbacks.Add(request.id, callback);
+                return request;
+            }
+            else
+            {
+                _requests.MeltItem(senderAddress, itemID, index, amount, (queryReturn) =>
+                {
+                    Request fullRequest = JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(queryReturn, 2));
+                    RequestCallbacks.Add(fullRequest.id, callback);
+                }, async);
+                return null;
+            }
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request MeltTokens(int userIdentityID, string itemID, string index, int amount,
             System.Action<RequestEvent> callback, bool async = false)
         {
@@ -441,7 +572,28 @@ namespace Enjin.SDK.Core
                 return null;
             }
         }
+        
+        public static Request MeltTokens(string senderAddress, string itemID, int amount,
+            System.Action<RequestEvent> callback, bool async = false)
+        {
+            if (!async)
+            {
+                Request request = MeltTokens(senderAddress, itemID, "", amount, async);
+                RequestCallbacks.Add(request.id, callback);
+                return request;
+            }
+            else
+            {
+                _requests.MeltItem(senderAddress, itemID, "", amount, (queryReturn) =>
+                {
+                    Request fullRequest = JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(queryReturn, 2));
+                    RequestCallbacks.Add(fullRequest.id, callback);
+                }, async);
+                return null;
+            }
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request MeltTokens(int userIdentityID, string itemID, int amount,
             System.Action<RequestEvent> callback, bool async = false)
         {
@@ -461,13 +613,29 @@ namespace Enjin.SDK.Core
                 return null;
             }
         }
+        
+        public static Request UpdateCryptoItem(string senderAddress, CryptoItem item, CryptoItemFieldType fieldType,
+            System.Action<RequestEvent> callback)
+        {
+            return _requests.UpdateCryptoItem(senderAddress, item, fieldType, callback);
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request UpdateCryptoItem(int identityID, CryptoItem item, CryptoItemFieldType fieldType,
             System.Action<RequestEvent> callback)
         {
             return _requests.UpdateCryptoItem(identityID, item, fieldType, callback);
         }
+        
+        public static Request CreateTradeRequest(string senderAddress, CryptoItem[] itemsFromSender,
+            int[] amountsFromSender, string secondPartyAddress, CryptoItem[] itemsFromSecondParty,
+            int[] amountsFromSecondParty)
+        {
+            return _requests.CreateTradeRequest(senderAddress, itemsFromSender, amountsFromSender,
+                secondPartyAddress, itemsFromSecondParty, amountsFromSecondParty);
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request CreateTradeRequest(int senderIdentityID, CryptoItem[] itemsFromSender,
             int[] amountsFromSender, string secondPartyAddress, CryptoItem[] itemsFromSecondParty,
             int[] amountsFromSecondParty)
@@ -475,7 +643,16 @@ namespace Enjin.SDK.Core
             return _requests.CreateTradeRequest(senderIdentityID, itemsFromSender, amountsFromSender,
                 secondPartyAddress, null, itemsFromSecondParty, amountsFromSecondParty);
         }
+        
+        public static Request CreateTradeRequest(string senderAddress, CryptoItem[] itemsFromSender,
+            int[] amountsFromSender, string secondPartyAddress, CryptoItem[] itemsFromSecondParty,
+            int[] amountsFromSecondParty, System.Action<RequestEvent> callback)
+        {
+            return _requests.CreateTradeRequest(senderAddress, itemsFromSender, amountsFromSender,
+                secondPartyAddress, itemsFromSecondParty, amountsFromSecondParty, callback);
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request CreateTradeRequest(int senderIdentityID, CryptoItem[] itemsFromSender,
             int[] amountsFromSender, string secondPartyAddress, CryptoItem[] itemsFromSecondParty,
             int[] amountsFromSecondParty, System.Action<RequestEvent> callback)
@@ -483,7 +660,8 @@ namespace Enjin.SDK.Core
             return _requests.CreateTradeRequest(senderIdentityID, itemsFromSender, amountsFromSender,
                 secondPartyAddress, null, itemsFromSecondParty, amountsFromSecondParty, callback);
         }
-
+        
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request CreateTradeRequest(int senderIdentityID, CryptoItem[] itemsFromSender,
             int[] amountsFromSender, int secondPartyIdentityID, CryptoItem[] itemsFromSecondParty,
             int[] amountsFromSecondParty)
@@ -492,6 +670,7 @@ namespace Enjin.SDK.Core
                 secondPartyIdentityID, itemsFromSecondParty, amountsFromSecondParty);
         }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request CreateTradeRequest(int senderIdentityID, CryptoItem[] itemsFromSender,
             int[] amountsFromSender, int secondPartyIdentityID, CryptoItem[] itemsFromSecondParty,
             int[] amountsFromSecondParty, System.Action<RequestEvent> callback)
@@ -499,14 +678,30 @@ namespace Enjin.SDK.Core
             return _requests.CreateTradeRequest(senderIdentityID, itemsFromSender, amountsFromSender, null,
                 secondPartyIdentityID, itemsFromSecondParty, amountsFromSecondParty, callback);
         }
+        
+        public static Request CreateTradeRequest(string senderAddress, TokenValueInputData[] itemsFromSender,
+            string secondPartyAddress, TokenValueInputData[] itemsFromSecondParty)
+        {
+            return _requests.CreateTradeRequest(senderAddress, itemsFromSender, secondPartyAddress,
+                itemsFromSecondParty);
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request CreateTradeRequest(int senderIdentityID, TokenValueInputData[] itemsFromSender,
             string secondPartyAddress, TokenValueInputData[] itemsFromSecondParty)
         {
             return _requests.CreateTradeRequest(senderIdentityID, itemsFromSender, secondPartyAddress, null,
                 itemsFromSecondParty);
         }
+        
+        public static Request CreateTradeRequest(string senderAddress, TokenValueInputData[] itemsFromSender,
+            string secondPartyAddress, TokenValueInputData[] itemsFromSecondParty, System.Action<RequestEvent> callback)
+        {
+            return _requests.CreateTradeRequest(senderAddress, itemsFromSender, secondPartyAddress,
+                itemsFromSecondParty, callback);
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request CreateTradeRequest(int senderIdentityID, TokenValueInputData[] itemsFromSender,
             string secondPartyAddress, TokenValueInputData[] itemsFromSecondParty, System.Action<RequestEvent> callback)
         {
@@ -514,6 +709,7 @@ namespace Enjin.SDK.Core
                 itemsFromSecondParty, callback);
         }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request CreateTradeRequest(int senderIdentityID, TokenValueInputData[] itemsFromSender,
             int secondPartyIdentityID, TokenValueInputData[] itemsFromSecondParty)
         {
@@ -521,18 +717,32 @@ namespace Enjin.SDK.Core
                 itemsFromSecondParty);
         }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request CreateTradeRequest(int senderIdentityID, TokenValueInputData[] itemsFromSender,
             int secondPartyIdentityID, TokenValueInputData[] itemsFromSecondParty, System.Action<RequestEvent> callback)
         {
             return _requests.CreateTradeRequest(senderIdentityID, itemsFromSender, null, secondPartyIdentityID,
                 itemsFromSecondParty, callback);
         }
+        
+        public static Request CompleteTradeRequest(string senderAddress, string tradeID)
+        {
+            return _requests.CompleteTradeRequest(senderAddress, tradeID);
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request CompleteTradeRequest(int senderIdentityID, string tradeID)
         {
             return _requests.CompleteTradeRequest(senderIdentityID, tradeID);
         }
+        
+        public static Request CompleteTradeRequest(string senderAddress, string tradeID,
+            System.Action<RequestEvent> callback)
+        {
+            return _requests.CompleteTradeRequest(senderAddress, tradeID, callback);
+        }
 
+        [Obsolete("Future updates no longer expose identities, use sender wallet address instead.")]
         public static Request CompleteTradeRequest(int secondPartyID, string tradeID,
             System.Action<RequestEvent> callback)
         {

@@ -1,5 +1,6 @@
 Login|query login{{result:EnjinOauth(email:"{0}",password:"{1}"){{id,accessTokens}}}}
-GetAppByID|query getAppByID{{result:EnjinApps(id:{0}){{id,name,description,image}}}}
+GetAppByID|query getAppByID{{result:EnjinApps(id:{0}){{id,name,description,image,wallets{{ethAddress}}}}}}
+GetApp|query getApp{result:EnjinApp{id,name,description,image,wallets{ethAddress}}}
 GetPlatformInfo|query getPlatform{result:Platform{id,network,name,notifications}}
 GetActiveTokens|query getIdentities{{activeTokens:EnjinIdentities(id:{0}){{id,tokens{{balance}}}}}}
 SetAllowance|mutation ApproveMAXENJ{{CreateEnjinRequest(appId:{0},identityId:{1},type:APPROVE,approve_enj_data:{{value:-1}}){{id,encodedData}}}}

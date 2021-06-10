@@ -1,4 +1,4 @@
-﻿using Enjin.SDK.GraphQL;
+﻿﻿using Enjin.SDK.GraphQL;
 using Enjin.SDK.Utility;
 using SimpleJSON;
 using UnityEngine;
@@ -24,6 +24,40 @@ namespace Enjin.SDK.Core
             return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(_query, 1));
         }
 
+        public Request CreateTradeRequest(string senderAddress, CryptoItem[] itemsFromSender, int[] amountsFromSender,
+            string secondPartyAddress, CryptoItem[] itemsFromSecondParty,
+            int[] amountsFromSecondParty)
+        {
+            if (EnjinHelpers.IsNullOrEmpty(itemsFromSender) || EnjinHelpers.IsNullOrEmpty(amountsFromSender) ||
+                itemsFromSender.Length != amountsFromSender.Length)
+                return null;
+
+            if (EnjinHelpers.IsNullOrEmpty(itemsFromSecondParty) ||
+                EnjinHelpers.IsNullOrEmpty(amountsFromSecondParty) ||
+                itemsFromSecondParty.Length != amountsFromSecondParty.Length)
+                return null;
+
+            TokenValueInputData[] fromSender = new TokenValueInputData[itemsFromSender.Length];
+            TokenValueInputData[] fromSecondParty = new TokenValueInputData[itemsFromSecondParty.Length];
+
+            for (int i = 0; i < itemsFromSender.Length; i++)
+            {
+                CryptoItem item = itemsFromSender[i];
+                int amount = amountsFromSender[i];
+                fromSender[i] = new TokenValueInputData(item.id, item.index, amount);
+            }
+
+            for (int i = 0; i < itemsFromSecondParty.Length; i++)
+            {
+                CryptoItem item = itemsFromSecondParty[i];
+                int amount = amountsFromSecondParty[i];
+                fromSecondParty[i] = new TokenValueInputData(item.id, item.index, amount);
+            }
+
+            return CreateTradeRequest(senderAddress, fromSender, secondPartyAddress,
+                fromSecondParty);
+        }
+        
         public Request CreateTradeRequest(int senderIdentityID, CryptoItem[] itemsFromSender, int[] amountsFromSender,
             string secondPartyAddress, int? secondPartyIdentityID, CryptoItem[] itemsFromSecondParty,
             int[] amountsFromSecondParty)
@@ -57,6 +91,17 @@ namespace Enjin.SDK.Core
             return CreateTradeRequest(senderIdentityID, fromSender, secondPartyAddress, secondPartyIdentityID,
                 fromSecondParty);
         }
+        
+        public Request CreateTradeRequest(string senderAddress, CryptoItem[] itemsFromSender, int[] amountsFromSender,
+            string secondPartyAddress, CryptoItem[] itemsFromSecondParty,
+            int[] amountsFromSecondParty, System.Action<RequestEvent> callback)
+        {
+            Request request = CreateTradeRequest(senderAddress, itemsFromSender, amountsFromSender,
+                secondPartyAddress, itemsFromSecondParty, amountsFromSecondParty);
+            int requestID = request.id;
+            Enjin.RequestCallbacks.Add(requestID, callback);
+            return request;
+        }
 
         public Request CreateTradeRequest(int senderIdentityID, CryptoItem[] itemsFromSender, int[] amountsFromSender,
             string secondPartyAddress, int? secondPartyIdentityID, CryptoItem[] itemsFromSecondParty,
@@ -67,6 +112,38 @@ namespace Enjin.SDK.Core
             int requestID = request.id;
             Enjin.RequestCallbacks.Add(requestID, callback);
             return request;
+        }
+
+        public Request CreateTradeRequest(string senderAddress, TokenValueInputData[] itemsFromSender,
+            string secondPartyAddress, TokenValueInputData[] itemsFromSecondParty)
+        {
+            if (EnjinHelpers.IsNullOrEmpty(itemsFromSender) || EnjinHelpers.IsNullOrEmpty(itemsFromSecondParty))
+                return null;
+
+            if (secondPartyAddress == null)
+                return null;
+
+            string askingStr = TokenValueInputData.ToGraphQL(itemsFromSecondParty);
+            string offeringStr = TokenValueInputData.ToGraphQL(itemsFromSender);
+
+            _query =
+                @"mutation sendTrade{result:CreateEnjinRequest(appId:$appId^,ethAddress:""$senderAddress^$$,type:CREATE_TRADE,create_trade_data:{asking_tokens:$askingTokens^,offering_tokens:$offeringTokens^";
+            _query += @",second_party_address:""$secondPartyAddress^""";
+            GraphQuery.variable["secondPartyAddress"] = secondPartyAddress;
+
+            _query += @"}){id,encodedData,state}}";
+
+            GraphQuery.variable["appId"] = Enjin.AppID.ToString();
+            GraphQuery.variable["senderAddress"] = senderAddress.ToString();
+            GraphQuery.variable["askingTokens"] = askingStr;
+            GraphQuery.variable["offeringTokens"] = offeringStr;
+
+            GraphQuery.POST(_query);
+
+            if (Enjin.ServerResponse == ResponseCodes.SUCCESS)
+                return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
+
+            return null;
         }
 
         public Request CreateTradeRequest(int senderIdentityID, TokenValueInputData[] itemsFromSender,
@@ -109,6 +186,17 @@ namespace Enjin.SDK.Core
             return null;
         }
 
+        public Request CreateTradeRequest(string senderAddress, TokenValueInputData[] itemsFromSender,
+            string secondPartyAddress, TokenValueInputData[] itemsFromSecondParty,
+            System.Action<RequestEvent> callback)
+        {
+            Request request = CreateTradeRequest(senderAddress, itemsFromSender, secondPartyAddress,
+                itemsFromSecondParty);
+            int requestID = request.id;
+            Enjin.RequestCallbacks.Add(requestID, callback);
+            return request;
+        }
+
         public Request CreateTradeRequest(int senderIdentityID, TokenValueInputData[] itemsFromSender,
             string secondPartyAddress, int? secondPartyIdentityID, TokenValueInputData[] itemsFromSecondParty,
             System.Action<RequestEvent> callback)
@@ -118,6 +206,25 @@ namespace Enjin.SDK.Core
             int requestID = request.id;
             Enjin.RequestCallbacks.Add(requestID, callback);
             return request;
+        }
+
+        public Request CompleteTradeRequest(string senderAddress, string tradeID)
+        {
+            // Build the query.
+            _query =
+                @"mutation sendTrade{result:CreateEnjinRequest(appId:$appId^,ethAddress:""$senderAddress^$$,type:COMPLETE_TRADE,complete_trade_data:{trade_id:""$tradeID^""}){id,encodedData,state}}";
+
+            // Populate the query.
+            GraphQuery.variable["appId"] = Enjin.AppID.ToString();
+            GraphQuery.variable["senderAddress"] = senderAddress.ToString();
+            GraphQuery.variable["tradeID"] = tradeID;
+
+            GraphQuery.POST(_query);
+
+            if (Enjin.ServerResponse == ResponseCodes.SUCCESS)
+                return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
+
+            return null;
         }
 
         public Request CompleteTradeRequest(int secondPartyID, string tradeID)
@@ -139,12 +246,52 @@ namespace Enjin.SDK.Core
             return null;
         }
 
+        public Request CompleteTradeRequest(string senderAddress, string tradeID, System.Action<RequestEvent> callback)
+        {
+            Request request = CompleteTradeRequest(senderAddress, tradeID);
+            int requestID = request.id;
+            Enjin.RequestCallbacks.Add(requestID, callback);
+            return request;
+        }
+
         public Request CompleteTradeRequest(int senderIdentityID, string tradeID, System.Action<RequestEvent> callback)
         {
             Request request = CompleteTradeRequest(senderIdentityID, tradeID);
             int requestID = request.id;
             Enjin.RequestCallbacks.Add(requestID, callback);
             return request;
+        }
+
+        public Request SendItem(string senderAddress, CryptoItem item, int recipientID, int value,
+            System.Action<string> handler, bool async = false)
+        {
+            _query =
+                @"mutation sendItem{CreateEnjinRequest(appId:$appId^,type:SEND,ethAddress:""$senderAddress^$$,send_token_data:{recipient_identity_id:$recipient_id^, token_id: ""$token_id^"", ";
+            if (item.nonFungible)
+            {
+                _query += @"token_index: ""$item_index^"", ";
+            }
+
+            _query += "value:$value^}){id,encodedData,state}}";
+
+            GraphQuery.variable["appId"] = Enjin.AppID.ToString();
+            GraphQuery.variable["senderAddress"] = senderAddress.ToString();
+            GraphQuery.variable["token_id"] = item.id;
+            if (item.nonFungible)
+            {
+                GraphQuery.variable["item_index"] = item.index;
+            }
+
+            GraphQuery.variable["recipient_id"] = recipientID.ToString();
+            GraphQuery.variable["value"] = value.ToString();
+            GraphQuery.POST(_query, "", async, (queryReturn) => { handler?.Invoke(queryReturn); });
+
+            if (GraphQuery.queryStatus == GraphQuery.Status.Complete)
+            {
+                return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -189,6 +336,26 @@ namespace Enjin.SDK.Core
             return null;
         }
 
+        public Request SendItem(string senderAddress, string tokenID, string recipientAddress, int value,
+            System.Action<string> handler, bool async = false)
+        {
+            _query =
+                @"mutation sendItem{CreateEnjinRequest(appId:$appId^,type:SEND,ethAddress:""$senderAddress^$$,send_token_data:{recipient_address:$recipientAddress^, token_id: ""$token_id^"", value:$value^}){id,encodedData,state}}";
+            GraphQuery.variable["appId"] = Enjin.AppID.ToString();
+            GraphQuery.variable["senderAddress"] = senderAddress.ToString();
+            GraphQuery.variable["token_id"] = tokenID;
+            GraphQuery.variable["recipientAddress"] = recipientAddress.ToString();
+            GraphQuery.variable["value"] = value.ToString();
+            GraphQuery.POST(_query, "", async, (queryReturn) => { handler?.Invoke(queryReturn); });
+
+            if (GraphQuery.queryStatus == GraphQuery.Status.Complete)
+            {
+                return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Creates a new Token on the Trusted Platform and blockchain
         /// </summary>
@@ -213,6 +380,31 @@ namespace Enjin.SDK.Core
             {
                 return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
             }
+
+            return null;
+        }
+
+        public Request SendItems(CryptoItemBatch sendItems, string senderAddress)
+        {
+            _query = @"mutation advancedSend{CreateEnjinRequest(appId:$appId^,ethAddress:" + senderAddress +
+                     ",type:ADVANCED_SEND,advanced_send_token_data:{transfers:[";
+
+            for (int i = 0; i < sendItems.Items.Count; i++)
+            {
+                _query += "{" + sendItems.Items[i] + "}";
+
+                if (i < sendItems.Items.Count - 1)
+                    _query += ",";
+            }
+
+            _query += "]}){id,encodedData}}";
+            GraphQuery.variable["appId"] = Enjin.AppID.ToString();
+            GraphQuery.POST(_query);
+
+            Debug.Log("<color=white>[DEBUG INFO]</color> " + _query);
+
+            if (Enjin.ServerResponse == ResponseCodes.SUCCESS)
+                return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
 
             return null;
         }
@@ -242,6 +434,26 @@ namespace Enjin.SDK.Core
             return null;
         }
 
+        public Request MintFungibleItem(string senderAddress, string[] addresses, string itemID, int value,
+            System.Action<string> handler, bool async = false)
+        {
+            _query =
+                @"mutation mintFToken{request:CreateEnjinRequest(appId:$appId^,ethAddress:""$senderAddress^"",type:MINT,mint_token_data:{token_id:""$itemID^"",recipient_address_array:$addresses^,value:$value^}){id,encodedData,state}}";
+            GraphQuery.variable["appId"] = Enjin.AppID.ToString();
+            GraphQuery.variable["senderAddress"] = senderAddress.ToString();
+            GraphQuery.variable["addresses"] = EnjinHelpers<string>.ConvertToJSONArrayString(addresses);
+            GraphQuery.variable["itemID"] = itemID;
+            GraphQuery.variable["value"] = value.ToString();
+            GraphQuery.POST(_query, "", async, (queryReturn) => { handler?.Invoke(queryReturn); });
+
+            if (GraphQuery.queryStatus == GraphQuery.Status.Complete)
+            {
+                return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
+            }
+
+            return null;
+        }
+
         public Request MintFungibleItem(int senderID, string[] addresses, string itemID, int value,
             System.Action<string> handler, bool async = false)
         {
@@ -262,6 +474,25 @@ namespace Enjin.SDK.Core
             return null;
         }
 
+        public Request MintNonFungibleItem(string senderAddress, string[] addresses, string itemID,
+            System.Action<string> handler, bool async = false)
+        {
+            _query =
+                @"mutation mintNFToken{request:CreateEnjinRequest(appId:$appId^,ethAddress:""$senderAddress^$$,type:MINT,mint_token_data:{token_id:""$itemID^"",recipient_address_array:$addresses^}){id,encodedData,state}}";
+            GraphQuery.variable["appId"] = Enjin.AppID.ToString();
+            GraphQuery.variable["senderAddress"] = senderAddress.ToString();
+            GraphQuery.variable["addresses"] = EnjinHelpers<string>.ConvertToJSONArrayString(addresses);
+            GraphQuery.variable["itemID"] = itemID;
+            GraphQuery.POST(_query, "", async, (queryReturn) => { handler?.Invoke(queryReturn); });
+
+            if (GraphQuery.queryStatus == GraphQuery.Status.Complete)
+            {
+                return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
+            }
+
+            return null;
+        }
+
         public Request MintNonFungibleItem(int senderID, string[] addresses, string itemID,
             System.Action<string> handler, bool async = false)
         {
@@ -271,6 +502,33 @@ namespace Enjin.SDK.Core
             GraphQuery.variable["senderID"] = senderID.ToString();
             GraphQuery.variable["addresses"] = EnjinHelpers<string>.ConvertToJSONArrayString(addresses);
             GraphQuery.variable["itemID"] = itemID;
+            GraphQuery.POST(_query, "", async, (queryReturn) => { handler?.Invoke(queryReturn); });
+
+            if (GraphQuery.queryStatus == GraphQuery.Status.Complete)
+            {
+                return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
+            }
+
+            return null;
+        }
+        
+        public Request MeltItem(string senderAddress, string itemID, string index, int amount, System.Action<string> handler,
+            bool async = false)
+        {
+            if (index != "")
+            {
+                _query =
+                    @"mutation meltToken{request:CreateEnjinRequest(appId:$appId^,type:MELT,ethAddress:""$senderAddress^$$,melt_token_data:{token_id:""$itemid^"",token_index:""$index^"",value:$amount^}){id,encodedData,state}}";
+                GraphQuery.variable["index"] = index;
+            }
+            else
+                _query =
+                    @"mutation meltToken{request:CreateEnjinRequest(appId:$appId^,type:MELT,ethAddress:""$senderAddress^$$,melt_token_data:{token_id:""$itemid^"",value:$amount^}){id,encodedData,state}}";
+
+            GraphQuery.variable["appId"] = Enjin.AppID.ToString();
+            GraphQuery.variable["senderAddress"] = senderAddress.ToString();
+            GraphQuery.variable["itemid"] = itemID;
+            GraphQuery.variable["amount"] = amount.ToString();
             GraphQuery.POST(_query, "", async, (queryReturn) => { handler?.Invoke(queryReturn); });
 
             if (GraphQuery.queryStatus == GraphQuery.Status.Complete)
@@ -311,6 +569,49 @@ namespace Enjin.SDK.Core
             if (GraphQuery.queryStatus == GraphQuery.Status.Complete)
             {
                 return JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
+            }
+
+            return null;
+        }
+        
+        public Request UpdateCryptoItem(string senderAddress, CryptoItem item, CryptoItemFieldType fieldType,
+            System.Action<RequestEvent> callback)
+        {
+            switch (fieldType)
+            {
+                case CryptoItemFieldType.NAME:
+                    _query =
+                        @"mutation updateItemName{request:CreateEnjinRequest(appId:$appId^,ethAddress:""$senderAddress^$$,type:UPDATE_NAME,update_item_name_data:{token_id:""$id^"",name:""$name^""}){id,encodedData,state}}";
+                    GraphQuery.variable["appId"] = Enjin.AppID.ToString();
+                    GraphQuery.variable["id"] = item.id;
+                    GraphQuery.variable["senderAddress"] = senderAddress.ToString();
+                    GraphQuery.variable["name"] = item.name;
+                    break;
+
+                case CryptoItemFieldType.MELTFEE:
+                    break;
+
+                case CryptoItemFieldType.TRANSFERABLE:
+                    break;
+
+                case CryptoItemFieldType.TRANSFERFEE:
+                    break;
+
+                case CryptoItemFieldType.MAXMELTFEE:
+                    break;
+
+                case CryptoItemFieldType.MAXTRANSFERFEE:
+                    break;
+            }
+
+            GraphQuery.POST(_query);
+
+            if (Enjin.ServerResponse == ResponseCodes.SUCCESS)
+            {
+                Request request = JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
+                Enjin.RequestCallbacks.Add(request.id, callback);
+
+                return request;
             }
 
             return null;
@@ -384,6 +685,51 @@ namespace Enjin.SDK.Core
             var requestGQL = JSON.Parse(GraphQuery.queryReturn);
 
             return requestGQL["data"]["EnjinTokens"][0]["itemURI"].Value;
+        }
+
+        /// <summary>
+        /// Sets the metadata URI for a cryptoItem
+        /// </summary>
+        /// <param name="identityID">Identity ID of user setting metadata URI</param>
+        /// <param name="itemID">ID of cryptoItem to set metadata URI for</param>
+        /// <param name="itemData">metadata URI data</param>
+        /// <returns></returns>
+        public Request SetCryptoItemURI(string senderAddress, CryptoItem item, string itemData,
+            System.Action<RequestEvent> callback)
+        {
+            if (item.index != null)
+            {
+                // Validate that index is not just empty, if so set it to null
+                if (item.index == string.Empty)
+                    item.index = null;
+            }
+
+            if (item.index == null)
+            {
+                _query =
+                    @"mutation setItemUri{request:CreateEnjinRequest(appId:$appId^,ethAddress:""$senderAddress^$$,type:SET_ITEM_URI,set_item_uri_data:{token_id:""$itemID^"",item_uri:""$itemData^""}){id,encodedData,state}}";
+            }
+            else
+            {
+                _query =
+                    @"mutation setURI{request:CreateEnjinRequest(appId:$appId^,identityId:$identityID^,type:SET_ITEM_URI,set_item_uri_data:{token_id:""$itemID^"",token_index:$tokenIndex^,item_uri:""$itemData^""}){id,encodedData,state}}";
+                GraphQuery.variable["tokenIndex"] = item.index.TrimStart('0');
+            }
+
+            GraphQuery.variable["appId"] = Enjin.AppID.ToString();
+            GraphQuery.variable["senderAddress"] = senderAddress.ToString();
+            GraphQuery.variable["itemID"] = item.id;
+            GraphQuery.variable["itemData"] = itemData;
+            GraphQuery.POST(_query);
+
+            if (Enjin.ServerResponse == ResponseCodes.SUCCESS)
+            {
+                Request request = JsonUtility.FromJson<Request>(EnjinHelpers.GetJSONString(GraphQuery.queryReturn, 2));
+                Enjin.RequestCallbacks.Add(request.id, callback);
+                return request;
+            }
+
+            return null;
         }
 
         /// <summary>
