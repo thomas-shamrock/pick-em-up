@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using RPGCharacterController;
+using Enjin.SDK.Core;
 
 public class Inventory : MonoBehaviour {
-
 	public Image[] icons;
+	public EnjinWallet enjinWallet;
 
 	private InventoryItem[] inventoryItems;
 
@@ -34,6 +35,7 @@ public class Inventory : MonoBehaviour {
 			string walletAddress = "";
 			this.Add (new InventoryItem (itemName, sprite, walletAddress));
 			Debug.Log ("Picked up " + itemName);
+			enjinWallet.GetItem(itemName);
 			Destroy (itemGameObject);
 		}
 	}

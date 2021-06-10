@@ -128,7 +128,22 @@ namespace Enjin.SDK.Core
 
         IEnumerator MintItem(string itemName, int quantity)
         {
-            string itemId = itemName;
+            //TODO: maybe read the list of item from a JSON file?
+            string itemId = "";
+            switch (itemName) {
+                case "axe_1":
+                    itemId = "3880000000000874";
+                    break;
+                case "dagger_1":
+                    itemId = "3880000000000875";
+                    break;
+                case "shield_1":
+                    itemId = "388000000000087f";
+                    break;
+                case "sword_1":
+                    itemId = "388000000000087e";
+                    break;
+            }
 
             SetAccessToken();
             Enjin.MintFungibleItem(_developerWalletAddress, new string[] {_playerWalletAddress}, itemId, quantity,
@@ -138,30 +153,30 @@ namespace Enjin.SDK.Core
         }
 
 
-        IEnumerator SendItem(string itemName, int quantiy)
-        {
-            string itemId = itemName;
+        // IEnumerator SendItem(string itemName, int quantiy)
+        // {
+        //     string itemId = itemName;
             
-            SetAccessToken(true);
-            Enjin.SendCryptoItemRequest(_playerWalletAddress, itemName, _developerWalletAddress, quantiy,
-                (requestData) => { print("Item Sended::" + itemName); }, true);
-            SetAccessToken();
+        //     SetAccessToken(true);
+        //     Enjin.SendCryptoItemRequest(_playerWalletAddress, itemName, _developerWalletAddress, quantiy,
+        //         (requestData) => { print("Item Sended::" + itemName); }, true);
+        //     SetAccessToken();
 
-            yield return null;
-        }
+        //     yield return null;
+        // }
 
 
-        IEnumerator MeltItem(string itemName, int quantity)
-        {
-            string itemId = itemName;
+        // IEnumerator MeltItem(string itemName, int quantity)
+        // {
+        //     string itemId = itemName;
             
-            SetAccessToken(true);
-            Enjin.MeltTokens(_playerWalletAddress, itemId, quantity,
-                (requestData) => { print("Item Melted::" + itemName); }, true);
-            SetAccessToken();
+        //     SetAccessToken(true);
+        //     Enjin.MeltTokens(_playerWalletAddress, itemId, quantity,
+        //         (requestData) => { print("Item Melted::" + itemName); }, true);
+        //     SetAccessToken();
 
-            yield return null;
-        }
+        //     yield return null;
+        // }
 
 
         public void GetItem(string name)
@@ -170,16 +185,16 @@ namespace Enjin.SDK.Core
             StartCoroutine(MintItem(name, 1));
         }
 
-        public void ReturnItem(string name)
-        {
-            print("Verifying transaction..");
-            StartCoroutine(MeltItem(name, 1));
-        }
+        // public void ReturnItem(string name)
+        // {
+        //     print("Verifying transaction..");
+        //     StartCoroutine(MeltItem(name, 1));
+        // }
 
-        public void SendItemTo(string name)
-        {
-            print("Verifying transaction..");
-            StartCoroutine(SendItem(name, 1));
-        }
+        // public void SendItemTo(string name)
+        // {
+        //     print("Verifying transaction..");
+        //     StartCoroutine(SendItem(name, 1));
+        // }
     }
 }
